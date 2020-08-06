@@ -1,0 +1,1036 @@
+{
+  "paragraphs": [
+    {
+      "text": "%md\n# Earthquake Demo using Logistic Regression\n\n## Setup\nFor this notebook you\u0027ll need a remote HDFS and Spark distribution (such as HDP), which may already be set up by your Watson Studio administrator. In this case, a remote HDFS and Spark 2 environment already exists, and we can access it through the Livy interpreter available within this Zeppelin notebook.\n\n### Data Sets\n- `GEM-GHEC-v1.txt`: GEM Global Historical Earthquake Catalogue\n- `isc-gem-cat.csv`: The ISC-GEM Global Instrumental Earthquake Catalogue\n\nYou will need to download these files and upload them to Watson Studio using the add new dataset option in the data sets pane within your project.\n- `GEM-GHEC-v1.txt` is available \u003ca href\u003d\"https://www.emidius.eu/GEH/download/GEM-GHEC-v1.txt\" target\u003d\"_blank\"\u003ehere\u003c/a\u003e (open the link and save the file).\n- `isc-gem-cat.csv` is available \u003ca href\u003d\"http://www.isc.ac.uk/iscgem/request_catalogue.php\" target\u003d\"_blank\"\u003ehere\u003c/a\u003e. You will need to provide your email address and organization affiliation, and a download link will be emailed to you. The downloaded file is a compressed archive, inside which you will find the csv.\n\n### Accessing HDFS\nThe paragraph below will allow you to upload the local csv data files into a remote HDFS cluster. Replace `WEBHDFS-URL` in each line with your Apache Knox secured webhdfs endpoint.",
+      "dateUpdated": "Mar 31, 2018 7:08:24 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch1\u003eEarthquake Demo using Logistic Regression\u003c/h1\u003e\n\u003ch2\u003eSetup\u003c/h2\u003e\n\u003cp\u003eFor this notebook you\u0026rsquo;ll need a remote HDFS and Spark distribution (such as HDP), which may already be set up by your Watson Studio administrator. In this case, a remote HDFS and Spark 2 environment already exists, and we can access it through the Livy interpreter available within this Zeppelin notebook.\u003c/p\u003e\n\u003ch3\u003eData Sets\u003c/h3\u003e\n\u003cul\u003e\n  \u003cli\u003e\u003ccode\u003eGEM-GHEC-v1.txt\u003c/code\u003e: GEM Global Historical Earthquake Catalogue\u003c/li\u003e\n  \u003cli\u003e\u003ccode\u003eisc-gem-cat.csv\u003c/code\u003e: The ISC-GEM Global Instrumental Earthquake Catalogue\u003c/li\u003e\n\u003c/ul\u003e\n\u003cp\u003eYou will need to download these files and upload them to Watson Studio using the add new dataset option in the data sets pane within your project.\u003cbr/\u003e- \u003ccode\u003eGEM-GHEC-v1.txt\u003c/code\u003e is available \u003ca href\u003d\"https://www.emidius.eu/GEH/download/GEM-GHEC-v1.txt\" target\u003d\"_blank\"\u003ehere\u003c/a\u003e (open the link and save the file).\u003cbr/\u003e- \u003ccode\u003eisc-gem-cat.csv\u003c/code\u003e is available \u003ca href\u003d\"http://www.isc.ac.uk/iscgem/request_catalogue.php\" target\u003d\"_blank\"\u003ehere\u003c/a\u003e. You will need to provide your email address and organization affiliation, and a download link will be emailed to you. The downloaded file is a compressed archive, inside which you will find the csv.\u003c/p\u003e\n\u003ch3\u003eAccessing HDFS\u003c/h3\u003e\n\u003cp\u003eThe paragraph below will allow you to upload the local csv data files into a remote HDFS cluster. Replace \u003ccode\u003eWEBHDFS-URL\u003c/code\u003e in each line with your Apache Knox secured webhdfs endpoint.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775811_-924124971",
+      "id": "20171030-194836_67972631",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%python\nimport dsx_core_utils\ndsx_core_utils.upload_hdfs_file(\"WEBHDFS-URL\", \"datasets/GEM-GHEC-v1.txt\", \"/tmp/GEM-GHEC-v1.txt\")\ndsx_core_utils.upload_hdfs_file(\"WEBHDFS-URL\", \"datasets/isc-gem-cat.csv\", \"/tmp/isc-gem-cat.csv\")\n",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/python",
+        "results": {},
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "python"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775842_-936052187",
+      "id": "20171101-203206_1416765852",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n### Make a  Spark RDD and a schema to go with it. Perform some more clean up steps of the data. ",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "text"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/text",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch3\u003eMake a Spark RDD and a schema to go with it. Perform some more clean up steps of the data.\u003c/h3\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775843_-936436936",
+      "id": "20171030-184502_723773934",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "//create RDD\nval historicalData \u003d sc.textFile(\"/tmp/GEM-GHEC-v1.txt\")\n\n//define the schema\nval globalInstrumentalCatalogData \u003d sc.textFile(\"/tmp/isc-gem-cat.csv\")\ncase class EarthQuake(\nid: String,\ndate: String,\nlat: Double,\nlon: Double,\ndepth: Double,\nmag: Double,\nmunc: Double\n)\n\n//clean up the records. Delimit by tabs and peel out the year/month\n//remove unwanted data entries\nval historical \u003d historicalData.filter(s \u003d\u003e\n!s.startsWith(\"#\") \u0026\u0026 !s.startsWith(\"En\\tSource\")\n).map{s\u003d\u003e\n//make a function to peel out the year\ndef get(s:String) \u003d {\nif (s\u003d\u003d\"\") {\n\"00\"\n} else {\ns\n}\n}\nval r \u003d s.split(\"\\t\")\nval year \u003d r(2) // year\nif (r(2) !\u003d \"\") {\nval month \u003d r(2)\n} else {\n//...and peel out the month\nval month \u003d \"00\"\n}\n//format the date\nval date \u003d r(2) + \"-\" + get(r(3)) + \"-\" + get(r(4)) + \" \" + get(r(5)) + \":\" + get(r(6)) + \":\" + get(r(7)) + \".00\"\n\n//extract interesting earthquake data:  id, date, depth, magnitude, \"uncorrected\" magnitude\nEarthQuake(\nr(0).toString, // id\ndate,\nget(r(9)).toDouble,\nget(r(10)).toDouble,\nget(r(14)).toDouble, // depth\nget(r(17)).toDouble, // mag\nget(r(18)).toDouble // mag unc\n\n)\n}\n\nval earthQuake \u003d globalInstrumentalCatalogData.filter(!_.startsWith(\"#\")).map{s\u003d\u003e\nval r \u003d s.split(\",\")\nEarthQuake(\nr(23).trim,\nr(0).trim,\nr(1).toDouble,\nr(2).toDouble,\nr(7).toDouble,\nr(10).toDouble,\nr(11).toDouble\n)\n}.union(historical).toDF   //make a dataframe\n//make a table to query\nearthQuake.registerTempTable(\"eq\")",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "results": {},
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775843_-936436936",
+      "id": "20171030-184636_1146772103",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "results": {},
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775843_-936436936",
+      "id": "20171030-185015_941638800",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n### Display the average magnitude, maximum magnitude, and minimum magnitude for all the earthquakes per year.",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch3\u003eDisplay the average magnitude, maximum magnitude, and minimum magnitude for all the earthquakes per year.\u003c/h3\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775843_-936436936",
+      "id": "20171030-185150_1796534104",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql select substring(date, 0, 4) as dt, avg(mag) as avg, max(mag) as max, min(mag) as min from eq group by substring(date, 0, 4) order by dt\n",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "sql"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/sql",
+        "editorHide": false,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "lineChart",
+              "height": 300.0,
+              "optionOpen": false
+            },
+            "helium": {}
+          },
+          "1": {
+            "graph": {
+              "mode": "table",
+              "height": 70.0,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775844_-938360680",
+      "id": "20171030-185254_2082097931",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## Make another table with the average depth for all earthquakes that year.",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eMake another table with the average depth for all earthquakes that year.\u003c/h2\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775844_-938360680",
+      "id": "20171030-185311_455129807",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql select substring(date, 0, 4) as dt, avg(depth) as depth from eq group by substring(date, 0, 4) order by dt",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/sql",
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "lineChart",
+              "height": 300.0,
+              "optionOpen": false
+            },
+            "helium": {}
+          }
+        },
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "sql"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775844_-938360680",
+      "id": "20171030-185329_752064877",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## Plot the number of recorded earthquakes per year",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003ePlot the number of recorded earthquakes per year\u003c/h2\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775844_-938360680",
+      "id": "20171030-185345_1332894551",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql \nselect substring(date, 0, 4) as dt, count(*) as cnt \nfrom eq \nwhere substring(date, 0, 4) \u003e ${dt\u003d1800}\ngroup by substring(date, 0, 4) \norder by dt\n",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/sql",
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "lineChart",
+              "height": 300.0,
+              "optionOpen": false
+            },
+            "helium": {}
+          }
+        },
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "sql"
+        }
+      },
+      "settings": {
+        "params": {
+          "dt": "1800"
+        },
+        "forms": {
+          "dt": {
+            "name": "dt",
+            "defaultValue": "1800",
+            "hidden": false
+          }
+        }
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775844_-938360680",
+      "id": "20171030-185405_835981803",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## Make a table of the aggregate number of earthquakes of varying magnitude. \n",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eMake a table of the aggregate number of earthquakes of varying magnitude.\u003c/h2\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775845_-938745429",
+      "id": "20171030-185424_1204175104",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "println(\"%table mag\\tcount\")\n// Uncomment this code below if using Livy with Spark 2.0 or later\n//#earthQuake.map(s\u003d\u003e(s(5).toString.toDouble.toInt, 1)).reduceByKey(_ + _).collect.foreach(s\u003d\u003eprintln(s._1 + \"\\t\" + s._2))\n",
+      "dateUpdated": "Jan 16, 2018 12:51:13 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "results": {},
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775845_-938745429",
+      "id": "20171030-185440_1443428992",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md \n## Now lets run a machine learning algorithm to predict ... the probabilty of a magnitude 6.0 or higher.\n### We\u0027ll logistic regression classification",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eNow lets run a machine learning algorithm to predict \u0026hellip; the probabilty of a magnitude 6.0 or higher.\u003c/h2\u003e\n\u003ch3\u003eWe\u0026rsquo;ll logistic regression classification\u003c/h3\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775846_-937591182",
+      "id": "20171030-185559_378118813",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## First import various Spark libaries ",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eFirst import various Spark libaries\u003c/h2\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775846_-937591182",
+      "id": "20171030-185626_21145076",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "import org.apache.spark.mllib.linalg.Vectors\nimport org.apache.spark.ml.feature.Bucketizer\nimport org.apache.spark.ml.Pipeline\nimport org.apache.spark.ml.feature.PCA\nimport org.apache.spark.ml.classification.LogisticRegression\nimport org.apache.spark.ml.feature.Binarizer\n",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "results": {},
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775846_-937591182",
+      "id": "20171030-185641_273774380",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## Let\u0027s look at a row of the earthquake data and create a dataframe (with year instead of full date).",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eLet\u0026rsquo;s look at a row of the earthquake data and create a dataframe (with year instead of full date).\u003c/h2\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775846_-937591182",
+      "id": "20171030-185657_1662831630",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "earthQuake.show(1)\nval eq2 \u003d earthQuake.selectExpr(\"id\", \"substr(date,1,4) as year\", \"lat\", \"lon\", \"depth\", \"mag\", \"munc\").toDF",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "results": {},
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775847_-937975931",
+      "id": "20171030-185748_54284667",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Spark likes numeric types. Cast all columns to double",
+      "text": "val df \u003d eq2.select(eq2(\"id\").cast(\"double\"),\neq2(\"year\").cast(\"double\"),\neq2(\"lat\").cast(\"double\"),\neq2(\"lon\").cast(\"double\"),\neq2(\"depth\").cast(\"double\"),\neq2(\"mag\").cast(\"double\"),\neq2(\"munc\").cast(\"double\"))\n\ndf.show(3)",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775847_-937975931",
+      "id": "20171030-185930_822960710",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Now create training and testing data sets.  (60% for training and 40% for testing)",
+      "text": "val Array(training, testing) \u003d df.randomSplit(Array(0.6, 0.4))",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775847_-937975931",
+      "id": "20171030-190207_1244225069",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "We\u0027ll use a VectorAssembler to combine many features into one feature column (logistic regression likes that)",
+      "text": "import org.apache.spark.ml.feature.VectorAssembler\nval assembler \u003d new VectorAssembler().setInputCols(Array(\"id\", \"year\", \"lat\", \"lon\", \"depth\", \"mag\", \"munc\")).setOutputCol(\"featureSet\")",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775847_-937975931",
+      "id": "20171030-190622_1831274557",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": " Set the binary threshold to Richter scale Magnitude of 6.0",
+      "text": "val binaryClassifier \u003d new Binarizer().setInputCol(\"mag\").setOutputCol(\"binaryLabel\").setThreshold(6.0)",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775847_-937975931",
+      "id": "20171030-190645_613183745",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Create a logistic regression model and set some parameters",
+      "text": "val lr \u003d new LogisticRegression().setMaxIter(20).setRegParam(0.2).setElasticNetParam(0.8).setLabelCol(\"binaryLabel\").setFeaturesCol(\"featureSet\")",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775848_-939899676",
+      "id": "20171030-190711_764037992",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Chain everything together with a Spark Pipeline (great way to organize steps)",
+      "text": "val pipeline \u003d new Pipeline().setStages(Array(assembler, binaryClassifier, lr))",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775848_-939899676",
+      "id": "20171030-190941_1778369091",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Train the model",
+      "text": "val model \u003d pipeline.fit(training)",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775848_-939899676",
+      "id": "20171030-191010_1777619277",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Make predictions",
+      "text": "val prediction \u003d model.transform(testing)",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775848_-939899676",
+      "id": "20171030-191205_1734534351",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Display the results",
+      "text": "prediction.select(\"prediction\", \"binaryLabel\", \"mag\").show(10)",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775848_-940284425",
+      "id": "20171030-191223_1154493381",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## How well did we do? We need to quantify the error.",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eHow well did we do? We need to quantify the error.\u003c/h2\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775849_-940284425",
+      "id": "20171030-191316_58038815",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## Let\u0027s create a dataframe that just identifies the correct and incorrect predictions.    \n### (1 is correct and 0 is incorrect)\n",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eLet\u0026rsquo;s create a dataframe that just identifies the correct and incorrect predictions.\u003c/h2\u003e\n\u003ch3\u003e(1 is correct and 0 is incorrect)\u003c/h3\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775849_-940284425",
+      "id": "20171030-191334_209750661",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "val matches \u003d udf((A : Int, B: Int) \u003d\u003e {\n    if (A+B \u003d\u003d 1) 0\n    else 1\n})\n\nval total \u003d prediction.count\nval rightWrong \u003d prediction.withColumn(\"matches\", matches($\"prediction\", $\"binaryLabel\")).groupBy(\"matches\").count.toDF\nrightWrong.registerTempTable(\"rightWrong\")\nrightWrong.show",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "results": {},
+        "enabled": true,
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775850_-939130178",
+      "id": "20171030-191416_1386584089",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "title": "Accuracy \u003d  Correct / Total",
+      "text": "rightWrong.where($\"matches\"\u003d\u003d\u003d1).select(rightWrong(\"count\") / total* 100 ).show",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775850_-939130178",
+      "id": "20171030-191429_1003553269",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n#### Not too bad an accuracy. ",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "editOnDblClick": true,
+          "language": "markdown"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch4\u003eNot too bad an accuracy.\u003c/h4\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775850_-939130178",
+      "id": "20171030-191453_331904558",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "",
+      "dateUpdated": "Jan 16, 2018 12:49:35 AM",
+      "config": {
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "scala"
+        },
+        "colWidth": 12.0,
+        "editorMode": "ace/mode/scala",
+        "editorHide": false,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1516063775850_-939130178",
+      "id": "20171030-191506_1086740465",
+      "dateCreated": "Jan 16, 2018 12:49:35 AM",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "Earthquake+Demo+with+Logistic+Regression",
+  "id": "2D3FRWKCR",
+  "angularObjects": {
+    "2CYSFF4KX:shared_process": [],
+    "2CZ7M5Z1U:shared_process": [],
+    "2CZN4E536:shared_process": [],
+    "2CXMXB6B9:shared_process": [],
+    "2CX1UN2AM:shared_process": [],
+    "2CVYP86A3:shared_process": [],
+    "2CZPMT4AR:shared_process": []
+  },
+  "config": {},
+  "info": {}
+}
